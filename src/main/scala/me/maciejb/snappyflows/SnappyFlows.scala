@@ -22,28 +22,29 @@ object SnappyFlows {
       object HeaderParse extends ParseStep[ByteString] {
         override def parse(reader: ByteReader): (ByteString, ParseStep[ByteString]) = {
           val actualHeader = reader.take(SnappyFramed.Header.length)
-          if (actualHeader == SnappyFramed.Header) {
-            (ByteString.empty, ChunkParser)
-          } else {
-            sys.error("Illegal header")
-          }
+          if (actualHeader == SnappyFramed.Header) (ByteString.empty, ChunkParser)
+          else sys.error("Illegal header")
         }
       }
 
       object ChunkParser extends ParseStep[ByteString] {
+        def checksumed(checksum: Int)(chunk: => ByteString) = {
+          chunk
+        }
+
         override def parse(reader: ByteReader) = {
           reader.readByte() match {
             case SnappyFramed.Flags.CompressedData =>
               val segmentLength = readByteTripleLE(reader) - 4
-              // Skip checksum
-              reader.skip(4)
-              val segment = reader.take(segmentLength)
-              val uncompressed = Snappy.uncompress(segment.toArray)
-              (ByteString(uncompressed), ChunkParser)
+              val uncompressed = checksumed(reader.readIntLE()) {
+                val segment = reader.take(segmentLength)
+                ByteString(Snappy.uncompress(segment.toArray))
+              }
+              (uncompressed, ChunkParser)
             case SnappyFramed.Flags.UncompressedData =>
               val segmentLength = readByteTripleLE(reader) - 4
-              reader.skip(4) // Skip checksum for now
-              (reader.take(segmentLength), ChunkParser)
+              val chunk = checksumed(reader.readIntLE()) {reader.take(segmentLength)}
+              (chunk, ChunkParser)
             case _ => sys.error("Illegal chunk flag")
           }
         }
