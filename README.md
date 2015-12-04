@@ -5,8 +5,9 @@ Naive compression and decompression `ByteString` [Akka Steams][akka-streams] `Fl
 Uses Snappy's [framing format][snappy-framing].
 
 ## Getting started
-Add the dependency:
+In your `build.sbt`:
 ```scala
+resolvers += "snappy-flows repo"  at "https://dl.bintray.com/maciej/maven/"
 libraryDependencies += "me.maciejb.snappyflows" %% "snappy-flows" % "0.0.1"
 ```
 
