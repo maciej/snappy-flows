@@ -16,7 +16,7 @@ object ManualTest extends App {
 
   val sink = Sink.foreach[ByteString](bs => println(bs.utf8String))
 
-  Await.ready(source.via(SnappyFlows.decodeFramed()).log("decoder").toMat(sink)(Keep.right).run(), 2.seconds)
+  Await.ready(source.via(SnappyFlows.decompress()).log("decoder").toMat(sink)(Keep.right).run(), 2.seconds)
 
   Await.ready(system.terminate(), 2.seconds)
 }

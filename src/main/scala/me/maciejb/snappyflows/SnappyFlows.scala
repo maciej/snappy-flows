@@ -1,5 +1,7 @@
 package me.maciejb.snappyflows
 
+import java.nio.ByteOrder
+
 import akka.stream.Attributes
 import akka.stream.io.ByteStringParser
 import akka.stream.io.ByteStringParser.{ByteReader, ParseStep}
@@ -7,17 +9,15 @@ import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 import org.xerial.snappy.Snappy
 
+import scala.util.control.NoStackTrace
+
 object SnappyFlows {
 
-  def decodeFramed(verifyChecksums: Boolean = false): Flow[ByteString, ByteString, Unit] =
-    Flow.fromGraph(new DecoderGraph(verifyChecksums))
+  def decompress(verifyChecksums: Boolean = false): Flow[ByteString, ByteString, Unit] =
+    Flow.fromGraph(new Decompressor(verifyChecksums))
 
-  private class DecoderGraph(verifyChecksums: Boolean) extends ByteStringParser[ByteString] {
+  private class Decompressor(verifyChecksums: Boolean) extends ByteStringParser[ByteString] {
     override def createLogic(inheritedAttributes: Attributes) = new ParsingLogic {
-
-      def readByteTripleLE(r: ByteReader): Int = {
-        r.readByte() | r.readByte() << 8 | r.readByte() << 16
-      }
 
       object HeaderParse extends ParseStep[ByteString] {
         override def parse(reader: ByteReader): (ByteString, ParseStep[ByteString]) = {
@@ -35,14 +35,14 @@ object SnappyFlows {
         override def parse(reader: ByteReader) = {
           reader.readByte() match {
             case SnappyFramed.Flags.CompressedData =>
-              val segmentLength = readByteTripleLE(reader) - 4
+              val segmentLength = Int24.readLE(reader) - 4
               val uncompressed = checksumed(reader.readIntLE()) {
                 val segment = reader.take(segmentLength)
                 ByteString(Snappy.uncompress(segment.toArray))
               }
               (uncompressed, ChunkParser)
             case SnappyFramed.Flags.UncompressedData =>
-              val segmentLength = readByteTripleLE(reader) - 4
+              val segmentLength = Int24.readLE(reader) - 4
               val chunk = checksumed(reader.readIntLE()) {reader.take(segmentLength)}
               (chunk, ChunkParser)
             case _ => sys.error("Illegal chunk flag")
@@ -54,6 +54,52 @@ object SnappyFlows {
     }
   }
 
+  def compress(chunkSize: Int = 65536): Flow[ByteString, ByteString, Unit] =
+    Flow.fromGraph(new Compressor(chunkSize))
+
+  private class Compressor(chunkSize: Int) extends ByteStringParser[ByteString] {
+    override def createLogic(inheritedAttributes: Attributes) = new ParsingLogic {
+
+      object HeaderWriter extends ParseStep[ByteString] {
+        override def parse(reader: ByteReader) = (SnappyFramed.Header, ChunkParser)
+      }
+
+      object ChunkParser extends ParseStep[ByteString] {
+        override def parse(reader: ByteReader) = {
+          val chunk = try {
+            reader.take(chunkSize)
+          } catch {
+            // :-)
+            case e: Exception with NoStackTrace => reader.takeAll()
+          }
+          val compressed = Snappy.compress(chunk.toArray)
+          val result = ByteString.newBuilder
+            .append(Int24.writeLE(compressed.length))
+            .putInt(0xBEEF)(ByteOrder.LITTLE_ENDIAN)
+            .putBytes(compressed)
+            .result()
+          (result, ChunkParser)
+        }
+      }
+
+      startWith(HeaderWriter)
+    }
+  }
+
+}
+
+private[snappyflows] object Int24 {
+  def readLE(r: ByteReader): Int = {
+    r.readByte() | r.readByte() << 8 | r.readByte() << 16
+  }
+
+  def writeLE(number: Int): ByteString = {
+    ByteString.apply(
+      (number & 0xff).toByte,
+      (number >> 8 & 0xff).toByte,
+      (number >> 16 & 0xff).toByte
+    )
+  }
 }
 
 object SnappyFramed {
