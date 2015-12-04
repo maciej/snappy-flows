@@ -11,8 +11,6 @@ import org.xerial.snappy.{PureJavaCrc32C, Snappy}
 
 import scala.util.control.NoStackTrace
 
-class InvalidChecksum(expected: Int, actual: Int) extends Exception
-
 object SnappyFlows {
 
   private implicit val byteOrder = ByteOrder.LITTLE_ENDIAN
@@ -20,47 +18,42 @@ object SnappyFlows {
   val MaxChunkSize = 65536
   val DefaultChunkSize = MaxChunkSize
 
-  def decompress(verifyChecksums: Boolean = false): Flow[ByteString, ByteString, Unit] =
+  def decompress(verifyChecksums: Boolean = true): Flow[ByteString, ByteString, Unit] =
     Flow.fromGraph(new Decompressor(verifyChecksums))
 
   private class Decompressor(verifyChecksums: Boolean) extends ByteStringParser[ByteString] {
     override def createLogic(inheritedAttributes: Attributes) = new ParsingLogic {
 
-      val crc32c = new PureJavaCrc32C
-
       object HeaderParse extends ParseStep[ByteString] {
         override def parse(reader: ByteReader): (ByteString, ParseStep[ByteString]) = {
           val actualHeader = reader.take(SnappyFramed.Header.length)
           if (actualHeader == SnappyFramed.Header) (ByteString.empty, ChunkParser)
-          else sys.error("Illegal header")
+          else sys.error(s"Illegal header: $actualHeader.")
         }
       }
 
       object ChunkParser extends ParseStep[ByteString] {
-        def withChecksumChecked(storedChecksum: Int)(chunk: => ByteString) = {
-          if (verifyChecksums) {
-            val actual = SnappyChecksum.checksum(chunk)
-            if (actual == storedChecksum) chunk
-            else throw new InvalidChecksum(storedChecksum, actual)
-          } else {
-            chunk
-          }
+        def checkChecksum(expected: Int, chunk: ByteString) = if (verifyChecksums) {
+          val actual = SnappyChecksum.checksum(chunk)
+          if (actual != expected) throw new InvalidChecksum(expected, actual)
         }
 
         override def parse(reader: ByteReader) = {
           reader.readByte() match {
             case SnappyFramed.Flags.CompressedData =>
               val segmentLength = Int24.readLE(reader) - 4
-              val uncompressed = withChecksumChecked(reader.readIntLE()) {
-                val segment = reader.take(segmentLength)
-                ByteString(Snappy.uncompress(segment.toArray))
-              }
+              val checksum = reader.readIntLE()
+              val compressed = reader.take(segmentLength)
+              val uncompressed = ByteString(Snappy.uncompress(compressed.toArray))
+              checkChecksum(checksum, uncompressed)
               (uncompressed, ChunkParser)
             case SnappyFramed.Flags.UncompressedData =>
               val segmentLength = Int24.readLE(reader) - 4
-              val chunk = withChecksumChecked(reader.readIntLE()) {reader.take(segmentLength)}
+              val checksum = reader.readIntLE()
+              val chunk = reader.take(segmentLength)
+              checkChecksum(checksum, chunk)
               (chunk, ChunkParser)
-            case _ => sys.error("Illegal chunk flag")
+            case flag => throw new IllegalChunkFlag(flag)
           }
         }
       }
@@ -69,8 +62,8 @@ object SnappyFlows {
     }
   }
 
-  def compress(chunkSize: Int = 65536): Flow[ByteString, ByteString, Unit] = {
-    require(chunkSize < MaxChunkSize, s"Chunk size $chunkSize exceeded max chunk size of $MaxChunkSize.")
+  def compress(chunkSize: Int = DefaultChunkSize): Flow[ByteString, ByteString, Unit] = {
+    require(chunkSize <= MaxChunkSize, s"Chunk size $chunkSize exceeded max chunk size of $MaxChunkSize.")
     Flow.fromGraph(new Compressor(chunkSize))
   }
 
@@ -91,8 +84,10 @@ object SnappyFlows {
           }
           val compressed = Snappy.compress(chunk.toArray)
           val checksum = SnappyChecksum.checksum(chunk)
+          val length = Int24.writeLE(compressed.length + 4)
           val result = ByteString.newBuilder
-            .append(Int24.writeLE(compressed.length))
+            .putByte(SnappyFramed.Flags.CompressedData)
+            .append(length)
             .putInt(checksum)
             .putBytes(compressed)
             .result()
@@ -108,13 +103,13 @@ object SnappyFlows {
 
 object SnappyFramed {
   object Flags {
-    val StreamIdentifier = 0xff
-    val UncompressedData = 0x01
-    val CompressedData = 0x00
+    val StreamIdentifier = 0xff.toByte
+    val UncompressedData = 0x01.toByte
+    val CompressedData = 0x00.toByte
   }
 
   private val HeaderBytes =
-    Array[Byte](Flags.StreamIdentifier.toByte, 0x06, 0x00, 0x00, 0x73, 0x4e, 0x61, 0x50, 0x70, 0x59)
+    Array[Byte](Flags.StreamIdentifier, 0x06, 0x00, 0x00, 0x73, 0x4e, 0x61, 0x50, 0x70, 0x59)
 
   val Header = ByteString(HeaderBytes)
 }
