@@ -1,4 +1,5 @@
 # Snappy flows
+[![Build Status](https://travis-ci.org/maciej/snappy-flows.svg)](https://travis-ci.org/maciej/snappy-flows)
 
 Naive compression and decompression `ByteString` [Akka Steams][akka-streams] `Flow`s implementation.
 
