@@ -8,13 +8,13 @@ Uses Snappy's [framing format][snappy-framing].
 ## Getting started
 In your `build.sbt`:
 ```scala
-resolvers += "snappy-flows repo"  at "https://dl.bintray.com/maciej/maven/"
+resolvers += "snappy-flows repo" at "https://dl.bintray.com/maciej/maven/"
 libraryDependencies += "me.maciejb.snappyflows" %% "snappy-flows" % "0.0.1"
 ```
 
 ## Usage
 ```scala
-import package me.maciejb.snappyflows.SnappyFlows
+import me.maciejb.snappyflows.SnappyFlows
 
 // To decompress your stream:
 yourSource.via(SnappyFlows.decompress())
