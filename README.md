@@ -1,5 +1,6 @@
 # Snappy flows
-[![Build Status](https://travis-ci.org/maciej/snappy-flows.svg)](https://travis-ci.org/maciej/snappy-flows)
+[![Maven Central][maven-central-badge]][maven-central-link]
+[![Build Status][travis-ci-badge]][travis-ci-link]
 
 Naive compression and decompression `ByteString` [Akka Steams][akka-streams] `Flow`s implementation.
 
@@ -33,3 +34,7 @@ yourSource.via(SnappyFlows.compress())
 [google-snappy]: https://github.com/google/snappy
 [snappy-java]: https://github.com/xerial/snappy-java
 [akka]: http://akka.io
+[maven-central-badge]: https://maven-badges.herokuapp.com/maven-central/me.maciejb.snappyflows/snappy-flows_2.11/badge.svg
+[maven-central-link]: (https://maven-badges.herokuapp.com/maven-central/me.maciejb.snappyflows/snappy-flows_2.11)
+[travis-ci-badge]: https://travis-ci.org/maciej/snappy-flows.svg
+[travis-ci-link]: https://travis-ci.org/maciej/snappy-flows
