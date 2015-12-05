@@ -35,6 +35,6 @@ yourSource.via(SnappyFlows.compress())
 [snappy-java]: https://github.com/xerial/snappy-java
 [akka]: http://akka.io
 [maven-central-badge]: https://maven-badges.herokuapp.com/maven-central/me.maciejb.snappyflows/snappy-flows_2.11/badge.svg
-[maven-central-link]: (https://maven-badges.herokuapp.com/maven-central/me.maciejb.snappyflows/snappy-flows_2.11)
+[maven-central-link]: https://maven-badges.herokuapp.com/maven-central/me.maciejb.snappyflows/snappy-flows_2.11
 [travis-ci-badge]: https://travis-ci.org/maciej/snappy-flows.svg
 [travis-ci-link]: https://travis-ci.org/maciej/snappy-flows
