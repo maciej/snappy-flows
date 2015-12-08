@@ -9,7 +9,7 @@ Uses Snappy's [framing format][snappy-framing].
 ## Getting started
 In your `build.sbt`:
 ```scala
-libraryDependencies += "me.maciejb.snappyflows" %% "snappy-flows" % "0.0.1"
+libraryDependencies += "me.maciejb.snappyflows" %% "snappy-flows" % "0.0.2"
 ```
 
 ## Usage
