@@ -2,14 +2,13 @@ package me.maciejb.snappyflows
 
 import java.nio.ByteOrder
 
-import akka.stream.Attributes
+import akka.stream.{FlowShape, Outlet, Inlet, Attributes}
 import akka.stream.io.ByteStringParser
 import akka.stream.io.ByteStringParser.{ByteReader, ParseStep}
 import akka.stream.scaladsl.Flow
+import akka.stream.stage.{InHandler, GraphStageLogic, GraphStage}
 import akka.util.ByteString
 import org.xerial.snappy.{PureJavaCrc32C, Snappy}
-
-import scala.util.control.NoStackTrace
 
 object SnappyFlows {
 
@@ -67,35 +66,60 @@ object SnappyFlows {
     Flow.fromGraph(new Compressor(chunkSize))
   }
 
-  private class Compressor(chunkSize: Int) extends ByteStringParser[ByteString] {
-    override def createLogic(inheritedAttributes: Attributes) = new ParsingLogic {
+  private class Compressor(chunkSize: Int) extends GraphStage[FlowShape[ByteString, ByteString]] {
+    private val in = Inlet[ByteString]("bytesIn")
+    private val out = Outlet[ByteString]("bytesOut")
 
-      object HeaderWriter extends ParseStep[ByteString] {
-        override def parse(reader: ByteReader) = (SnappyFramed.Header, ChunkParser)
-      }
+    override def shape = FlowShape(in, out)
 
-      object ChunkParser extends ParseStep[ByteString] {
-        override def parse(reader: ByteReader) = {
-          val chunk = try {
-            reader.take(chunkSize)
-          } catch {
-            // :-)
-            case e: Exception with NoStackTrace => reader.takeAll()
-          }
-          val compressed = Snappy.compress(chunk.toArray)
-          val checksum = SnappyChecksum.checksum(chunk)
-          val length = Int24.writeLE(compressed.length + 4)
-          val result = ByteString.newBuilder
-            .putByte(SnappyFramed.Flags.CompressedData)
-            .append(length)
-            .putInt(checksum)
-            .putBytes(compressed)
-            .result()
-          (result, ChunkParser)
+    override def createLogic(inheritedAttributes: Attributes) = {
+      new GraphStageLogic(shape) {
+
+        var buffer = ByteString.empty
+
+        override def preStart() = {
+          emit(out, SnappyFramed.Header)
+          pull(in)
         }
-      }
 
-      startWith(HeaderWriter)
+        setHandler(out, eagerTerminateOutput)
+        setHandler(in, new InHandler {
+
+          def tryCompressing() = {
+            if (buffer.size >= chunkSize) {
+              val (chunk, remaining) = buffer.splitAt(chunkSize)
+              buffer = remaining
+              compress(chunk)
+            }
+          }
+
+          def compress(chunk: ByteString) = {
+            val compressed = Snappy.compress(chunk.toArray)
+            val checksum = SnappyChecksum.checksum(chunk)
+            val length = Int24.writeLE(compressed.length + 4)
+            val result = ByteString.newBuilder
+              .putByte(SnappyFramed.Flags.CompressedData)
+              .append(length)
+              .putInt(checksum)
+              .putBytes(compressed)
+              .result()
+
+            emit(out, result)
+          }
+
+          override def onPush() = {
+            buffer ++= grab(in)
+            tryCompressing()
+            pull(in)
+          }
+
+          override def onUpstreamFinish() = {
+            if (buffer.nonEmpty) compress(buffer)
+            completeStage()
+          }
+
+        })
+      }
     }
   }
 
