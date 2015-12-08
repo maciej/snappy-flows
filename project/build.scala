@@ -1,7 +1,7 @@
+import bintray.BintrayKeys._
+import com.typesafe.sbt.pgp.PgpKeys
 import sbt.Keys._
 import sbt._
-import com.typesafe.sbt.pgp.PgpKeys
-import bintray.BintrayKeys._
 import sbtrelease.ReleasePlugin.autoImport._
 
 object Versions {
@@ -52,6 +52,5 @@ object Settings {
         </developers>
       ),
     releasePublishArtifactsAction := PgpKeys.publishSigned.value
-
   )
 }
