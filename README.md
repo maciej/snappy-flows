@@ -11,6 +11,7 @@ In your `build.sbt`:
 ```scala
 libraryDependencies += "me.maciejb.snappyflows" %% "snappy-flows" % "0.0.2"
 ```
+Snappy flows are available only for Scala 2.11.
 
 ## Usage
 ```scala
