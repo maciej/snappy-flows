@@ -17,10 +17,12 @@ libraryDependencies += "me.maciejb.snappyflows" %% "snappy-flows" % "0.0.2"
 import me.maciejb.snappyflows.SnappyFlows
 
 // To decompress your stream:
-yourSource.via(SnappyFlows.decompress())
+val compressedSource: Source[ByteString] = ???
+compressedSource.via(SnappyFlows.decompress())
 
 // To compress it
-yourSource.via(SnappyFlows.compress())
+val rawSource: Source[ByteString] = ???
+rawSource.via(SnappyFlows.compress())
 ```
 
 ## Resources
