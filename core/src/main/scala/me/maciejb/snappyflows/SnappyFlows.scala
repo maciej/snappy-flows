@@ -32,8 +32,8 @@ object SnappyFlows {
       }
 
       object ChunkParser extends ParseStep[ByteString] {
-        def checkChecksum(expected: Int, chunk: ByteString) = if (verifyChecksums) {
-          val actual = SnappyChecksum.checksum(chunk)
+        def checkChecksum(expected: Int, bytes: Array[Byte]) = if (verifyChecksums) {
+          val actual = SnappyChecksum.checksum(bytes)
           if (actual != expected) throw new InvalidChecksum(expected, actual)
         }
 
@@ -43,14 +43,15 @@ object SnappyFlows {
               val segmentLength = Int24.readLE(reader) - 4
               val checksum = reader.readIntLE()
               val compressed = reader.take(segmentLength)
-              val uncompressed = ByteString(Snappy.uncompress(compressed.toArray))
-              checkChecksum(checksum, uncompressed)
+              val uncompressedBytes = Snappy.uncompress(compressed.toArray)
+              val uncompressed = ByteString(uncompressedBytes)
+              checkChecksum(checksum, uncompressedBytes)
               (uncompressed, ChunkParser)
             case SnappyFramed.Flags.UncompressedData =>
               val segmentLength = Int24.readLE(reader) - 4
               val checksum = reader.readIntLE()
               val chunk = reader.take(segmentLength)
-              checkChecksum(checksum, chunk)
+              checkChecksum(checksum, chunk.toArray)
               (chunk, ChunkParser)
             case flag => throw new IllegalChunkFlag(flag)
           }
@@ -145,8 +146,6 @@ object SnappyChecksum {
   private[this] final val threadLocalCrc = new ThreadLocal[PureJavaCrc32C]() {
     override def initialValue() = new PureJavaCrc32C
   }
-
-  def checksum(data: ByteString): Int = checksum(data.toArray)
 
   def checksum(data: Array[Byte]): Int = {
     val crc32c = threadLocalCrc.get()
