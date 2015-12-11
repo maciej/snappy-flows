@@ -94,8 +94,9 @@ object SnappyFlows {
           }
 
           def compress(chunk: ByteString) = {
-            val compressed = Snappy.compress(chunk.toArray)
-            val checksum = SnappyChecksum.checksum(chunk)
+            val chunkBytes = chunk.toArray
+            val compressed = Snappy.compress(chunkBytes)
+            val checksum = SnappyChecksum.checksum(chunkBytes)
             val length = Int24.writeLE(compressed.length + 4)
             val result = ByteString.newBuilder
               .putByte(SnappyFramed.Flags.CompressedData)
@@ -141,9 +142,16 @@ object SnappyFramed {
 object SnappyChecksum {
   val MaskDelta = 0xa282ead8
 
-  def checksum(data: ByteString): Int = {
-    val crc32c = new PureJavaCrc32C
-    crc32c.update(data.toArray, 0, data.length)
+  private[this] final val threadLocalCrc = new ThreadLocal[PureJavaCrc32C]() {
+    override def initialValue() = new PureJavaCrc32C
+  }
+
+  def checksum(data: ByteString): Int = checksum(data.toArray)
+
+  def checksum(data: Array[Byte]): Int = {
+    val crc32c = threadLocalCrc.get()
+    crc32c.reset()
+    crc32c.update(data, 0, data.length)
     val crc = crc32c.getIntegerValue
     ((crc >>> 15) | (crc << 17)) + MaskDelta
   }

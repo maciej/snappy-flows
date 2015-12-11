@@ -1,6 +1,6 @@
 package me.maciejb.snappyflows.benchmarks
 
-import java.nio.file.{Files, Paths}
+import java.nio.file.{Path, Files, Paths}
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
@@ -51,7 +51,16 @@ class SnappyJavaBenchmark {
 }
 
 object EColi {
-  val bytes = Files.readAllBytes(Paths.get("").resolve("data/E.coli"))
+  val bytes = {
+    val cwd: Path = Paths.get("").toAbsolutePath
+
+    val basePath =
+      if (cwd.endsWith("benchmarks")) cwd
+      else if (cwd.endsWith("snappy-flows")) cwd.resolve("benchmarks")
+      else sys.error(s"what's your working directory, sir? ${cwd}")
+
+    Files.readAllBytes(basePath.resolve("data/E.coli"))
+  }
 }
 
 object SnappyJavaBenchmarkApp {
