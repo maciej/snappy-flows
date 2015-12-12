@@ -20,6 +20,25 @@ object SnappyFlows {
   def decompress(verifyChecksums: Boolean = true): Flow[ByteString, ByteString, Unit] =
     Flow.fromGraph(new Decompressor(verifyChecksums))
 
+  def decompressAsync(parallelism: Int, verifyChecksums: Boolean = true)
+                     (implicit ec: ExecutionContext): Flow[ByteString, ByteString, Unit] = {
+    SnappyChunk.decodingFlow.mapAsync(parallelism) {
+      case NoData => Future.successful(ByteString.empty)
+      case UncompressedData(data, checksum) =>
+        Future {
+          val dataBytes = data.toArray
+          if (verifyChecksums) SnappyChecksum.verifyChecksum(dataBytes, checksum)
+          data
+        }
+      case CompressedData(data, checksum) =>
+        Future {
+          val uncompressedData = Snappy.uncompress(data.toArray)
+          if (verifyChecksums) SnappyChecksum.verifyChecksum(uncompressedData, checksum)
+          ByteString.fromArray(uncompressedData)
+        }
+    }
+  }
+
   private class Decompressor(verifyChecksums: Boolean) extends ByteStringParser[ByteString] {
     override def createLogic(inheritedAttributes: Attributes) = new ParsingLogic {
 
@@ -162,6 +181,50 @@ object SnappyFramed {
 
 }
 
+sealed trait SnappyChunk
+case class CompressedData(data: ByteString, checksum: Int) extends SnappyChunk
+case class UncompressedData(data: ByteString, checksum: Int) extends SnappyChunk
+case object NoData extends SnappyChunk
+
+object SnappyChunk {
+  def decodingFlow: Flow[ByteString, SnappyChunk, Unit] = Flow.fromGraph(new Decoder)
+
+  private class Decoder extends ByteStringParser[SnappyChunk] {
+    override def createLogic(inheritedAttributes: Attributes) = new ParsingLogic {
+
+      object HeaderParse extends ParseStep[SnappyChunk] {
+        override def parse(reader: ByteReader) = {
+          val header = reader.take(SnappyFramed.Header.length)
+
+          if (header == SnappyFramed.Header) (NoData, ChunkParser)
+          else sys.error(s"Illegal header: $header.")
+        }
+      }
+
+      object ChunkParser extends ParseStep[SnappyChunk] {
+
+        override def parse(reader: ByteReader) = {
+          reader.readByte() match {
+            case SnappyFramed.Flags.CompressedData =>
+              val segmentLength = Int24.readLE(reader) - 4
+              val checksum = reader.readIntLE()
+              val data = reader.take(segmentLength)
+              (CompressedData(data, checksum), ChunkParser)
+            case SnappyFramed.Flags.UncompressedData =>
+              val segmentLength = Int24.readLE(reader) - 4
+              val checksum = reader.readIntLE()
+              val data = reader.take(segmentLength)
+              (UncompressedData(data, checksum), ChunkParser)
+            case flag => throw new IllegalChunkFlag(flag)
+          }
+        }
+      }
+
+      startWith(HeaderParse)
+    }
+  }
+}
+
 object SnappyChecksum {
   val MaskDelta = 0xa282ead8
 
@@ -176,4 +239,10 @@ object SnappyChecksum {
     val crc = crc32c.getIntegerValue
     ((crc >>> 15) | (crc << 17)) + MaskDelta
   }
+
+  def verifyChecksum(data: Array[Byte], expectedChecksum: Int) = {
+    val actual = checksum(data)
+    if (actual != expectedChecksum) throw new InvalidChecksum(expectedChecksum, actual)
+  }
+
 }
