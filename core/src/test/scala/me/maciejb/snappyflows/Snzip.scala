@@ -21,7 +21,7 @@ object Snzip extends App {
   val sink = Sink.file(new File(args(0) + ".sz"))
 
   Await.ready(
-    source.via(SnappyFlows.compress()).log("compress").toMat(sink)(Keep.right).run()
+    source.via(SnappyFlows.compressAsync(4)).log("compress").toMat(sink)(Keep.right).run()
       .andThen { case _ => system.terminate() },
     1.minutes)
 
