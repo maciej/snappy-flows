@@ -15,6 +15,7 @@ class RoundTripTest extends FlatSpec with Matchers with TestKitBase with BeforeA
 
   override implicit lazy val system: ActorSystem = ActorSystem("RoundTripTest")
   implicit lazy val mat = ActorMaterializer()
+
   import scala.concurrent.ExecutionContext.Implicits._
 
   /* 1 MiB of data */
@@ -24,11 +25,33 @@ class RoundTripTest extends FlatSpec with Matchers with TestKitBase with BeforeA
     ByteString(arr)
   }
 
-  "Compressing, then uncompromising" should "produce the same data, checksumed" in {
-    val viaRoundTripFut = Source.single(UncompressedData).via(SnappyFlows.compressAsync(4)).via(SnappyFlows.decompress())
-      .toMat(Sink.fold[ByteString, ByteString](ByteString.empty) {_ ++ _})(Keep.right).run()
-    whenReady(viaRoundTripFut) { viaRoundTrip =>
-      viaRoundTrip shouldEqual UncompressedData
+  val compressionFlows = Seq(
+    "sync" -> SnappyFlows.compress(),
+    "async(1)" -> SnappyFlows.compressAsync(1),
+    "async(4)" -> SnappyFlows.compressAsync(4)
+  )
+
+  val decompressionFlows = Seq(
+    "sync" -> SnappyFlows.decompress(),
+    "async(1)" -> SnappyFlows.decompressAsync(1),
+    "async(4)" -> SnappyFlows.decompressAsync(4)
+  )
+
+  for {
+    (cFlowDesc, cFlow) <- compressionFlows
+    (dFlowDesc, dFlow) <- decompressionFlows
+  } {
+    s"Compressing ($cFlowDesc), then uncompromising ($dFlowDesc)" should "produce the same data, checksumed" in {
+      val viaRoundTripFut = Source
+        .single(UncompressedData)
+        .via(cFlow)
+        .via(dFlow)
+        .toMat(Sink.fold[ByteString, ByteString](ByteString.empty) {_ ++ _})(Keep.right)
+        .run()
+
+      whenReady(viaRoundTripFut) { viaRoundTrip =>
+        viaRoundTrip shouldEqual UncompressedData
+      }
     }
   }
 
