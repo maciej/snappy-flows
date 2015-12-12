@@ -21,6 +21,7 @@ CompressionBenchmark.compressViaFlows        thrpt   20      3.669 ±  0.044  op
 CompressionBenchmark.compressViaAsyncFlows2  thrpt   20      6.957 ±  0.050  ops/s
 CompressionBenchmark.compressViaAsyncFlows4  thrpt   20     11.768 ±  0.161  ops/s
 ```
+compressing the the E.coli file concatenated 10x (~46MiB).
 
 ## Decompression
 Single-threaded compression results in ~95% of `SnappyFramedInputStream`.
@@ -31,5 +32,6 @@ DecompressionBenchmark.decompressViaFlows        thrpt   20   8.907 ± 0.145  op
 DecompressionBenchmark.decompressViaAsyncFlows2  thrpt   20  16.088 ± 0.145  ops/s
 DecompressionBenchmark.decompressViaAsyncFlows4  thrpt   20  26.850 ± 0.442  ops/s
 ```
+decompressing the compressed (block size 2^16) E.coli file concatenated 10x (~22MiB).
 
 [canterbury-corpus]: http://corpus.canterbury.ac.nz
