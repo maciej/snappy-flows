@@ -5,6 +5,7 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.ByteString
 import me.maciejb.snappyflows.SnappyFlows
+import me.maciejb.snappyflows.benchmarks.data.EColi
 import me.maciejb.snappyflows.util.Chunking
 import org.openjdk.jmh.annotations.{Benchmark, Scope, State, TearDown}
 import org.openjdk.jmh.runner.Runner
