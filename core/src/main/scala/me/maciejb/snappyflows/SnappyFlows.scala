@@ -7,7 +7,7 @@ import akka.stream.scaladsl._
 import akka.stream.stage._
 import akka.stream.{Attributes, FlowShape, Inlet, Outlet}
 import akka.util.ByteString
-import me.maciejb.snappyflows.util.Chunking
+import me.maciejb.snappyflows.util.{Chunking, Int24}
 import org.xerial.snappy.{PureJavaCrc32C, Snappy}
 
 import scala.concurrent.{ExecutionContext, Future}

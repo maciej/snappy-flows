@@ -1,4 +1,4 @@
-package me.maciejb.snappyflows
+package me.maciejb.snappyflows.util
 
 import akka.stream.io.ByteStringParser.ByteReader
 import akka.util.ByteString
