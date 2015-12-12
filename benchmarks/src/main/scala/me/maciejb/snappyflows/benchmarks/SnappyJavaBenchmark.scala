@@ -3,10 +3,11 @@ package me.maciejb.snappyflows.benchmarks
 import java.nio.file.{Path, Files, Paths}
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
+import akka.stream.{Attributes, ActorMaterializer}
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.ByteString
 import me.maciejb.snappyflows.SnappyFlows
+import me.maciejb.snappyflows.util.Chunking
 import org.openjdk.jmh.annotations.{TearDown, Benchmark, Scope, State}
 import org.openjdk.jmh.runner.Runner
 import org.openjdk.jmh.runner.options.{OptionsBuilder, Options}
@@ -21,26 +22,49 @@ class SnappyJavaBenchmark {
 
   implicit val system = ActorSystem()
   implicit val mat = ActorMaterializer()
+  implicit val ec = concurrent.ExecutionContext.Implicits.global
+
+  val input = EColi.bytesX10
+  val inputByteString = ByteString.fromArray(input)
 
   val compressionGraph =
-    Source.single(ByteString.fromArray(EColi.bytes))
+    Source.single(inputByteString)
       .via(SnappyFlows.compress())
       .toMat(Sink.last)(Keep.right)
 
+  val asyncCompressionGraph =
+    Source.single(inputByteString)
+      .via(SnappyFlows.compressAsync(2))
+      .toMat(Sink.ignore)(Keep.right)
+
+  val chunkGraph =
+    Source.single(inputByteString)
+      .via(Chunking.fixedSize(SnappyFlows.DefaultChunkSize))
+      .toMat(Sink.ignore)(Keep.right)
 
   @Benchmark
-  def compressEColiWithSnappyJava() = {
+  def compressWithPlainJava() = {
     val stream = new SnappyFramedOutputStream(new NullOutputStream)
     try {
-      stream.write(EColi.bytes)
+      stream.write(input)
     } finally {
       stream.close()
     }
   }
 
   @Benchmark
-  def compressEColiWithSnappyFlows() = {
+  def compressViaFlows() = {
     Await.ready(compressionGraph.run(), 1.second)
+  }
+
+  @Benchmark
+  def compressViaAsyncFlows() = {
+    Await.ready(asyncCompressionGraph.run(), 1.second)
+  }
+
+  @Benchmark
+  def chunk(): Unit = {
+    Await.ready(asyncCompressionGraph.run(), 1.second)
   }
 
   @TearDown
@@ -57,10 +81,12 @@ object EColi {
     val basePath =
       if (cwd.endsWith("benchmarks")) cwd
       else if (cwd.endsWith("snappy-flows")) cwd.resolve("benchmarks")
-      else sys.error(s"what's your working directory, sir? ${cwd}")
+      else sys.error(s"what's your working directory, sir? $cwd")
 
     Files.readAllBytes(basePath.resolve("data/E.coli"))
   }
+
+  lazy val bytesX10: Array[Byte] = (0 until 10).flatMap(_ => bytes).toArray
 }
 
 object SnappyJavaBenchmarkApp {

@@ -1,18 +1,18 @@
 package me.maciejb.snappyflows
 
-import java.nio.ByteOrder
 
-import akka.stream.{FlowShape, Outlet, Inlet, Attributes}
 import akka.stream.io.ByteStringParser
 import akka.stream.io.ByteStringParser.{ByteReader, ParseStep}
-import akka.stream.scaladsl.Flow
-import akka.stream.stage.{InHandler, GraphStageLogic, GraphStage}
+import akka.stream.scaladsl._
+import akka.stream.stage._
+import akka.stream.{Attributes, FlowShape, Inlet, Outlet}
 import akka.util.ByteString
+import me.maciejb.snappyflows.util.Chunking
 import org.xerial.snappy.{PureJavaCrc32C, Snappy}
 
-object SnappyFlows {
+import scala.concurrent.{ExecutionContext, Future}
 
-  private implicit val byteOrder = ByteOrder.LITTLE_ENDIAN
+object SnappyFlows {
 
   val MaxChunkSize = 65536
   val DefaultChunkSize = MaxChunkSize
@@ -67,6 +67,26 @@ object SnappyFlows {
     Flow.fromGraph(new Compressor(chunkSize))
   }
 
+  def compressAsync(parallelism: Int, chunkSize: Int = DefaultChunkSize)
+                   (implicit ec: ExecutionContext): Flow[ByteString, ByteString, Unit] = {
+    val headerSource = Source.single(SnappyFramed.Header)
+    val compressionFlow = Flow[ByteString]
+      .via(Chunking.fixedSize(chunkSize))
+      .mapAsync(parallelism) { chunk => Future(SnappyFramed.compressChunk(chunk)) }
+
+    Flow
+      .fromGraph(FlowGraph.create() { implicit b =>
+        import FlowGraph.Implicits._
+        val concat = b.add(Concat[ByteString](2))
+        val flow = b.add(Flow[ByteString])
+
+        headerSource ~> concat.in(0)
+        flow.outlet ~> compressionFlow ~> concat.in(1)
+
+        FlowShape(flow.inlet, concat.out)
+      })
+  }
+
   private class Compressor(chunkSize: Int) extends GraphStage[FlowShape[ByteString, ByteString]] {
     private val in = Inlet[ByteString]("bytesIn")
     private val out = Outlet[ByteString]("bytesOut")
@@ -94,20 +114,7 @@ object SnappyFlows {
             }
           }
 
-          def compress(chunk: ByteString) = {
-            val chunkBytes = chunk.toArray
-            val compressed = Snappy.compress(chunkBytes)
-            val checksum = SnappyChecksum.checksum(chunkBytes)
-            val length = Int24.writeLE(compressed.length + 4)
-            val result = ByteString.newBuilder
-              .putByte(SnappyFramed.Flags.CompressedData)
-              .append(length)
-              .putInt(checksum)
-              .putBytes(compressed)
-              .result()
-
-            emit(out, result)
-          }
+          def compress(chunk: ByteString) = emit(out, SnappyFramed.compressChunk(chunk))
 
           override def onPush() = {
             buffer ++= grab(in)
@@ -138,6 +145,21 @@ object SnappyFramed {
     Array[Byte](Flags.StreamIdentifier, 0x06, 0x00, 0x00, 0x73, 0x4e, 0x61, 0x50, 0x70, 0x59)
 
   val Header = ByteString(HeaderBytes)
+
+  def compressChunk(chunk: ByteString): ByteString = {
+    val chunkBytes = chunk.toArray
+    val compressed = Snappy.compress(chunkBytes)
+    val checksum = SnappyChecksum.checksum(chunkBytes)
+    val length = Int24.writeLE(compressed.length + 4)
+
+    ByteString.newBuilder
+      .putByte(SnappyFramed.Flags.CompressedData)
+      .append(length)
+      .putInt(checksum)
+      .putBytes(compressed)
+      .result()
+  }
+
 }
 
 object SnappyChecksum {

@@ -15,6 +15,7 @@ class RoundTripTest extends FlatSpec with Matchers with TestKitBase with BeforeA
 
   override implicit lazy val system: ActorSystem = ActorSystem("RoundTripTest")
   implicit lazy val mat = ActorMaterializer()
+  import scala.concurrent.ExecutionContext.Implicits._
 
   /* 1 MiB of data */
   val UncompressedData = {
@@ -24,7 +25,7 @@ class RoundTripTest extends FlatSpec with Matchers with TestKitBase with BeforeA
   }
 
   "Compressing, then uncompromising" should "produce the same data, checksumed" in {
-    val viaRoundTripFut = Source.single(UncompressedData).via(SnappyFlows.compress()).via(SnappyFlows.decompress())
+    val viaRoundTripFut = Source.single(UncompressedData).via(SnappyFlows.compressAsync(4)).via(SnappyFlows.decompress())
       .toMat(Sink.fold[ByteString, ByteString](ByteString.empty) {_ ++ _})(Keep.right).run()
     whenReady(viaRoundTripFut) { viaRoundTrip =>
       viaRoundTrip shouldEqual UncompressedData
