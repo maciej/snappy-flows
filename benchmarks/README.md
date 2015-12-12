@@ -15,12 +15,21 @@ SnappyJavaBenchmark.compressEColiWithSnappyJava   thrpt   20  40.690 ± 0.929  o
 Async compression is fast. Even tough the compression itself could be optimized I get
 much better performance than when using a `SnappyFramedOutputStream`:
 ```
-SnappyJavaBenchmark.chunk                   thrpt   20  10998.012 ± 79.410  ops/s
-SnappyJavaBenchmark.compressWithPlainJava   thrpt   20      3.950 ±  0.124  ops/s
-SnappyJavaBenchmark.compressViaFlows        thrpt   20      3.669 ±  0.044  ops/s
-SnappyJavaBenchmark.compressViaAsyncFlows2  thrpt   20      6.957 ±  0.050  ops/s
-SnappyJavaBenchmark.compressViaAsyncFlows4  thrpt   20     11.768 ±  0.161  ops/s
+CompressionBenchmark.chunk                   thrpt   20  10998.012 ± 79.410  ops/s
+CompressionBenchmark.compressWithPlainJava   thrpt   20      3.950 ±  0.124  ops/s
+CompressionBenchmark.compressViaFlows        thrpt   20      3.669 ±  0.044  ops/s
+CompressionBenchmark.compressViaAsyncFlows2  thrpt   20      6.957 ±  0.050  ops/s
+CompressionBenchmark.compressViaAsyncFlows4  thrpt   20     11.768 ±  0.161  ops/s
 ```
 
+## Decompression
+Single-threaded compression results in ~95% of `SnappyFramedInputStream`.
+Async decompression can give a nice speedup, though:
+```
+DecompressionBenchmark.decompressWithPlainJava   thrpt   20   9.415 ± 0.179  ops/s
+DecompressionBenchmark.decompressViaFlows        thrpt   20   8.907 ± 0.145  ops/s
+DecompressionBenchmark.decompressViaAsyncFlows2  thrpt   20  16.088 ± 0.145  ops/s
+DecompressionBenchmark.decompressViaAsyncFlows4  thrpt   20  26.850 ± 0.442  ops/s
+```
 
 [canterbury-corpus]: http://corpus.canterbury.ac.nz

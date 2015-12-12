@@ -5,6 +5,7 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.ByteString
 import me.maciejb.snappyflows.SnappyFlows
+import me.maciejb.snappyflows.benchmarks.data.EColi
 
 import scala.concurrent.Await
 import scala.concurrent.duration._

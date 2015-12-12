@@ -7,6 +7,7 @@ import akka.stream.{Attributes, ActorMaterializer}
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.ByteString
 import me.maciejb.snappyflows.SnappyFlows
+import me.maciejb.snappyflows.benchmarks.data.EColi
 import me.maciejb.snappyflows.util.Chunking
 import org.openjdk.jmh.annotations.{TearDown, Benchmark, Scope, State}
 import org.openjdk.jmh.runner.Runner
@@ -18,7 +19,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration._
 
 @State(Scope.Benchmark)
-class SnappyJavaBenchmark {
+class CompressionBenchmark {
 
   implicit val system = ActorSystem()
   implicit val mat = ActorMaterializer()
@@ -84,26 +85,13 @@ class SnappyJavaBenchmark {
 
 }
 
-object EColi {
-  val bytes = {
-    val cwd: Path = Paths.get("").toAbsolutePath
 
-    val basePath =
-      if (cwd.endsWith("benchmarks")) cwd
-      else if (cwd.endsWith("snappy-flows")) cwd.resolve("benchmarks")
-      else sys.error(s"what's your working directory, sir? $cwd")
 
-    Files.readAllBytes(basePath.resolve("data/E.coli"))
-  }
-
-  lazy val bytesX10: Array[Byte] = (0 until 10).flatMap(_ => bytes).toArray
-}
-
-object SnappyJavaBenchmarkApp {
+object CompressionBenchmarkApp {
 
   def main(args: Array[String]) {
     val opt: Options = new OptionsBuilder()
-      .include(classOf[SnappyJavaBenchmark].getSimpleName)
+      .include(classOf[CompressionBenchmark].getSimpleName)
       .forks(1)
       .warmupIterations(10)
       .build
