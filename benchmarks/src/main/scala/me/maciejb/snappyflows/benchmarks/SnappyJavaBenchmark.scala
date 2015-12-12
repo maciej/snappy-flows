@@ -32,7 +32,12 @@ class SnappyJavaBenchmark {
       .via(SnappyFlows.compress())
       .toMat(Sink.last)(Keep.right)
 
-  val asyncCompressionGraph =
+  val asyncCompressionGraph4 =
+    Source.single(inputByteString)
+      .via(SnappyFlows.compressAsync(4))
+      .toMat(Sink.ignore)(Keep.right)
+
+  val asyncCompressionGraph2 =
     Source.single(inputByteString)
       .via(SnappyFlows.compressAsync(2))
       .toMat(Sink.ignore)(Keep.right)
@@ -58,13 +63,18 @@ class SnappyJavaBenchmark {
   }
 
   @Benchmark
-  def compressViaAsyncFlows() = {
-    Await.ready(asyncCompressionGraph.run(), 1.second)
+  def compressViaAsyncFlows2() = {
+    Await.ready(asyncCompressionGraph2.run(), 1.second)
+  }
+
+  @Benchmark
+  def compressViaAsyncFlows4() = {
+    Await.ready(asyncCompressionGraph4.run(), 1.second)
   }
 
   @Benchmark
   def chunk(): Unit = {
-    Await.ready(asyncCompressionGraph.run(), 1.second)
+    Await.ready(chunkGraph.run(), 1.second)
   }
 
   @TearDown

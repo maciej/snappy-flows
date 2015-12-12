@@ -12,15 +12,14 @@ SnappyJavaBenchmark.compressEColiWithSnappyJava   thrpt   20  40.690 ± 0.929  o
 ```
 
 ## Async compress
-These are pretty interesting results, though I have to say I'm a bit suspicious about the
-async benchmark quality. After all the throughput should not be greater than that of simple
-chunking:
-
+Async compression is fast. Even tough the compression itself could be optimized I get
+much better performance than when using a `SnappyFramedOutputStream`:
 ```
-SnappyJavaBenchmark.chunk                  thrpt   20  6.945 ± 0.025  ops/s
-SnappyJavaBenchmark.compressViaAsyncFlows  thrpt   20  6.980 ± 0.019  ops/s
-SnappyJavaBenchmark.compressViaFlows       thrpt   20  3.567 ± 0.102  ops/s
-SnappyJavaBenchmark.compressWithPlainJava  thrpt   20  3.772 ± 0.093  ops/s
+SnappyJavaBenchmark.chunk                   thrpt   20  10998.012 ± 79.410  ops/s
+SnappyJavaBenchmark.compressWithPlainJava   thrpt   20      3.950 ±  0.124  ops/s
+SnappyJavaBenchmark.compressViaFlows        thrpt   20      3.669 ±  0.044  ops/s
+SnappyJavaBenchmark.compressViaAsyncFlows2  thrpt   20      6.957 ±  0.050  ops/s
+SnappyJavaBenchmark.compressViaAsyncFlows4  thrpt   20     11.768 ±  0.161  ops/s
 ```
 
 
