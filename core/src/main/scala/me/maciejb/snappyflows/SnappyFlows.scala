@@ -4,8 +4,7 @@ package me.maciejb.snappyflows
 import akka.stream.io.ByteStringParser
 import akka.stream.io.ByteStringParser.{ByteReader, ParseStep}
 import akka.stream.scaladsl._
-import akka.stream.stage._
-import akka.stream.{Attributes, FlowShape, Inlet, Outlet}
+import akka.stream.{Attributes, FlowShape}
 import akka.util.ByteString
 import me.maciejb.snappyflows.util.{Chunking, Int24}
 import org.xerial.snappy.{PureJavaCrc32C, Snappy}
@@ -17,8 +16,19 @@ object SnappyFlows {
   val MaxChunkSize = 65536
   val DefaultChunkSize = MaxChunkSize
 
-  def decompress(verifyChecksums: Boolean = true): Flow[ByteString, ByteString, Unit] =
-    Flow.fromGraph(new Decompressor(verifyChecksums))
+  def decompress(verifyChecksums: Boolean = true): Flow[ByteString, ByteString, Unit] = {
+    SnappyChunk.decodingFlow.map {
+      case NoData => ByteString.empty
+      case UncompressedData(data, checksum) =>
+        val dataBytes = data.toArray
+        if (verifyChecksums) SnappyChecksum.verifyChecksum(dataBytes, checksum)
+        data
+      case CompressedData(data, checksum) =>
+        val uncompressedData = Snappy.uncompress(data.toArray)
+        if (verifyChecksums) SnappyChecksum.verifyChecksum(uncompressedData, checksum)
+        ByteString.fromArray(uncompressedData)
+    }
+  }
 
   def decompressAsync(parallelism: Int, verifyChecksums: Boolean = true)
                      (implicit ec: ExecutionContext): Flow[ByteString, ByteString, Unit] = {
@@ -36,48 +46,6 @@ object SnappyFlows {
           if (verifyChecksums) SnappyChecksum.verifyChecksum(uncompressedData, checksum)
           ByteString.fromArray(uncompressedData)
         }
-    }
-  }
-
-  private class Decompressor(verifyChecksums: Boolean) extends ByteStringParser[ByteString] {
-    override def createLogic(inheritedAttributes: Attributes) = new ParsingLogic {
-
-      object HeaderParse extends ParseStep[ByteString] {
-        override def parse(reader: ByteReader): (ByteString, ParseStep[ByteString]) = {
-          val actualHeader = reader.take(SnappyFramed.Header.length)
-          if (actualHeader == SnappyFramed.Header) (ByteString.empty, ChunkParser)
-          else sys.error(s"Illegal header: $actualHeader.")
-        }
-      }
-
-      object ChunkParser extends ParseStep[ByteString] {
-        def checkChecksum(expected: Int, bytes: Array[Byte]) = if (verifyChecksums) {
-          val actual = SnappyChecksum.checksum(bytes)
-          if (actual != expected) throw new InvalidChecksum(expected, actual)
-        }
-
-        override def parse(reader: ByteReader) = {
-          reader.readByte() match {
-            case SnappyFramed.Flags.CompressedData =>
-              val segmentLength = Int24.readLE(reader) - 4
-              val checksum = reader.readIntLE()
-              val compressed = reader.take(segmentLength)
-              val uncompressedBytes = Snappy.uncompress(compressed.toArray)
-              val uncompressed = ByteString(uncompressedBytes)
-              checkChecksum(checksum, uncompressedBytes)
-              (uncompressed, ChunkParser)
-            case SnappyFramed.Flags.UncompressedData =>
-              val segmentLength = Int24.readLE(reader) - 4
-              val checksum = reader.readIntLE()
-              val chunk = reader.take(segmentLength)
-              checkChecksum(checksum, chunk.toArray)
-              (chunk, ChunkParser)
-            case flag => throw new IllegalChunkFlag(flag)
-          }
-        }
-      }
-
-      startWith(HeaderParse)
     }
   }
 
