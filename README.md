@@ -2,7 +2,7 @@
 [![Maven Central][maven-central-badge]][maven-central-link]
 [![Build Status][travis-ci-badge]][travis-ci-link]
 
-Naive compression and decompression `ByteString` [Akka Steams][akka-streams] `Flow`s implementation.
+Snappy compression and decompression [Akka Steams][akka-streams] `Flow`s.
 
 Uses Snappy's [framing format][snappy-framing].
 
@@ -14,17 +14,32 @@ libraryDependencies += "me.maciejb.snappyflows" %% "snappy-flows" % "0.0.3"
 Snappy flows are available only for Scala 2.11 and Akka Streams 2.0-M2.
 
 ## Usage
+Sync and async versions of the flows are available:
+
 ```scala
 import me.maciejb.snappyflows.SnappyFlows
 
-// To decompress your stream:
-val sourceWithCompressedData: Source[ByteString] = ???
-sourceWithCompressedData.via(SnappyFlows.decompress())
+val Parallelism = 4
 
-// To compress it
-val sourceWithRawBytes: Source[ByteString] = ???
+// Let's take a source we want to decompress
+val sourceWithCompressedData: Source[ByteString] = Source(...)
+
+sourceWithCompressedData.via(SnappyFlows.decompress())
+// or
+sourceWithCompressedData.via(SnappyFlows.decompressAsync(Parallelism))
+
+// Now, one we want to compress
+val sourceWithRawBytes: Source[ByteString] = Source(...)
+
 sourceWithRawBytes.via(SnappyFlows.compress())
+// or
+sourceWithRawBytes.via(SnappyFlows.compressAsync(Parallelism))
 ```
+
+## Performance
+Initial benchmarks show that the non-async Snappy Flows achieve ~90% of performance of
+`SnappyFramedInputStream` and `SnappyFramedOutputStream`. `async` versions provide very good speedup, though.
+For details refer to [benchmarks/README.md](benchmarks/README.md).
 
 ## Resources
 * [Reference Snappy implementation][google-snappy]
