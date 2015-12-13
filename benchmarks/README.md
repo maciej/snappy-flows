@@ -11,7 +11,8 @@ SnappyJavaBenchmark.compressEColiWithSnappyFlows  thrpt   20  36.933 ± 0.397  o
 SnappyJavaBenchmark.compressEColiWithSnappyJava   thrpt   20  40.690 ± 0.929  ops/s
 ```
 
-## Async compress
+## Compression
+
 Async compression is fast. Even tough the compression itself could be optimized I get
 much better performance than when using a `SnappyFramedOutputStream`:
 ```
@@ -23,6 +24,8 @@ CompressionBenchmark.compressViaAsyncFlows4  thrpt   20     11.768 ±  0.161  op
 ```
 compressing the the E.coli file concatenated 10x (~46MiB).
 
+The `async(4)` version has a throughput of ~550MiB/s.
+
 ## Decompression
 Single-threaded compression results in ~95% of `SnappyFramedInputStream`.
 Async decompression can give a nice speedup, though:
@@ -33,5 +36,7 @@ DecompressionBenchmark.decompressViaAsyncFlows2  thrpt   20  16.088 ± 0.145  op
 DecompressionBenchmark.decompressViaAsyncFlows4  thrpt   20  26.850 ± 0.442  ops/s
 ```
 decompressing the compressed (block size 2^16) E.coli file concatenated 10x (~22MiB).
+
+Decompression throughput of the `async(4)` version is ~600MiB/s.
 
 [canterbury-corpus]: http://corpus.canterbury.ac.nz
