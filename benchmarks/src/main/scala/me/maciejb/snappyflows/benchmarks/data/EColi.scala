@@ -35,7 +35,7 @@ object EColiCompressed {
 
     val byteStringFut = Source
       .single(ByteString(EColi.bytesX10))
-      .via(SnappyFlows.compressAsync(1))
+      .via(SnappyFlows.compressAsync(2))
       .toMat(Sink.fold(ByteString.empty)(_ ++ _))(Keep.right)
       .run()
 
