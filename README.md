@@ -38,7 +38,7 @@ sourceWithRawBytes.via(SnappyFlows.compressAsync(Parallelism))
 
 ## Performance
 Initial benchmarks show that the non-async Snappy Flows achieve ~90% of performance of
-`SnappyFramedInputStream` and `SnappyFramedOutputStream`. `async` versions provide very good speedup, though.
+`SnappyFramedInputStream` and `SnappyFramedOutputStream`. `async` versions provide very good speedup giving 550-600MiB/s throughput on the test data on a a late 2013 15’ MBP with Intel(R) Core(TM) i7-4960HQ CPU @ 2.60GHz, 16GiB.
 For details refer to [benchmarks/README.md](benchmarks/README.md).
 
 ## Resources
