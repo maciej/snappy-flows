@@ -86,7 +86,6 @@ class CompressionBenchmark {
 }
 
 
-
 object CompressionBenchmarkApp {
 
   def main(args: Array[String]) {

@@ -81,17 +81,12 @@ object SnappyFlows {
     }
   }
 
-  def compress(chunkSize: Int = DefaultChunkSize): Flow[ByteString, ByteString, Unit] = {
+  private[this] def compressWithFlow(chunkSize: Int,
+                                     compressionFlow: Flow[ByteString, ByteString, Unit]) = {
     require(chunkSize <= MaxChunkSize, s"Chunk size $chunkSize exceeded max chunk size of $MaxChunkSize.")
-    Flow.fromGraph(new Compressor(chunkSize))
-  }
 
-  def compressAsync(parallelism: Int, chunkSize: Int = DefaultChunkSize)
-                   (implicit ec: ExecutionContext): Flow[ByteString, ByteString, Unit] = {
     val headerSource = Source.single(SnappyFramed.Header)
-    val compressionFlow = Flow[ByteString]
-      .via(Chunking.fixedSize(chunkSize))
-      .mapAsync(parallelism) { chunk => Future(SnappyFramed.compressChunk(chunk)) }
+    val chunkingAndCompression = Flow[ByteString].via(Chunking.fixedSize(chunkSize)).via(compressionFlow)
 
     Flow
       .fromGraph(FlowGraph.create() { implicit b =>
@@ -100,55 +95,21 @@ object SnappyFlows {
         val flow = b.add(Flow[ByteString])
 
         headerSource ~> concat.in(0)
-        flow.outlet ~> compressionFlow ~> concat.in(1)
+        flow.outlet ~> chunkingAndCompression ~> concat.in(1)
 
         FlowShape(flow.inlet, concat.out)
       })
   }
 
-  private class Compressor(chunkSize: Int) extends GraphStage[FlowShape[ByteString, ByteString]] {
-    private val in = Inlet[ByteString]("bytesIn")
-    private val out = Outlet[ByteString]("bytesOut")
+  def compress(chunkSize: Int = DefaultChunkSize): Flow[ByteString, ByteString, Unit] = {
+    compressWithFlow(chunkSize, Flow[ByteString].map(SnappyFramed.compressChunk))
+  }
 
-    override def shape = FlowShape(in, out)
-
-    override def createLogic(inheritedAttributes: Attributes) = {
-      new GraphStageLogic(shape) {
-
-        var buffer = ByteString.empty
-
-        override def preStart() = {
-          emit(out, SnappyFramed.Header)
-          pull(in)
-        }
-
-        setHandler(out, eagerTerminateOutput)
-        setHandler(in, new InHandler {
-
-          def tryCompressing() = {
-            if (buffer.size >= chunkSize) {
-              val (chunk, remaining) = buffer.splitAt(chunkSize)
-              buffer = remaining
-              compress(chunk)
-            }
-          }
-
-          def compress(chunk: ByteString) = emit(out, SnappyFramed.compressChunk(chunk))
-
-          override def onPush() = {
-            buffer ++= grab(in)
-            tryCompressing()
-            pull(in)
-          }
-
-          override def onUpstreamFinish() = {
-            if (buffer.nonEmpty) compress(buffer)
-            completeStage()
-          }
-
-        })
-      }
-    }
+  def compressAsync(parallelism: Int, chunkSize: Int = DefaultChunkSize)
+                   (implicit ec: ExecutionContext): Flow[ByteString, ByteString, Unit] = {
+    compressWithFlow(chunkSize,
+      Flow[ByteString].mapAsync(parallelism) { chunk => Future(SnappyFramed.compressChunk(chunk)) }
+    )
   }
 
 }
