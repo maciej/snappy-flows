@@ -56,17 +56,16 @@ object SnappyFlows {
     val headerSource = Source.single(SnappyFramed.Header)
     val chunkingAndCompression = Flow[ByteString].via(Chunking.fixedSize(chunkSize)).via(compressionFlow)
 
-    Flow
-      .fromGraph(FlowGraph.create() { implicit b =>
-        import FlowGraph.Implicits._
-        val concat = b.add(Concat[ByteString](2))
-        val flow = b.add(Flow[ByteString])
+    Flow.fromGraph(GraphDSL.create() { implicit b =>
+      import GraphDSL.Implicits._
+      val concat = b.add(Concat[ByteString](2))
+      val flow = b.add(Flow[ByteString])
 
-        headerSource ~> concat.in(0)
-        flow.outlet ~> chunkingAndCompression ~> concat.in(1)
+      headerSource ~> concat.in(0)
+      flow.outlet ~> chunkingAndCompression ~> concat.in(1)
 
-        FlowShape(flow.inlet, concat.out)
-      })
+      FlowShape(flow.in, concat.out)
+    })
   }
 
   def compress(chunkSize: Int = DefaultChunkSize): Flow[ByteString, ByteString, Unit] = {

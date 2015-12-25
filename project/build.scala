@@ -15,7 +15,7 @@ object Dependencies {
   val akka = Seq(
     "com.typesafe.akka" %% "akka-actor" % Versions.akka,
     "com.typesafe.akka" %% "akka-testkit" % Versions.akka % "test",
-    "com.typesafe.akka" %% "akka-stream-experimental" % "2.0-M2"
+    "com.typesafe.akka" %% "akka-stream-experimental" % "2.0.1"
   )
 
   val snappy = "org.xerial.snappy" % "snappy-java" % "1.1.2"
