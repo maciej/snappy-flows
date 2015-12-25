@@ -51,7 +51,7 @@ object SnappyFlows {
 
   private[this] def compressWithFlow(chunkSize: Int,
                                      compressionFlow: Flow[ByteString, ByteString, Unit]) = {
-    require(chunkSize <= MaxChunkSize, s"Chunk size $chunkSize exceeded max chunk size of $MaxChunkSize.")
+    require(chunkSize <= MaxChunkSize, s"Chunk size $chunkSize exceeds maximum chunk size of $MaxChunkSize.")
 
     val headerSource = Source.single(SnappyFramed.Header)
     val chunkingAndCompression = Flow[ByteString].via(Chunking.fixedSize(chunkSize)).via(compressionFlow)
