@@ -47,8 +47,9 @@ For details refer to [benchmarks/README.md](benchmarks/README.md).
 ## Resources
 * [Reference Snappy implementation][google-snappy]
 * [Snappy for Java][snappy-java]
-* [Akka Steams documentation][akka-streams]
+* [Akka Streams documentation][akka-streams]
 * [Akka project][akka]
+* [Snappy flows at bintray][bintray-snappy-flows]
 
 [akka-streams]: http://doc.akka.io/docs/akka-stream-and-http-experimental/snapshot/scala.html
 [snappy-framing]: https://github.com/google/snappy/blob/master/framing_format.txt
@@ -59,3 +60,4 @@ For details refer to [benchmarks/README.md](benchmarks/README.md).
 [maven-central-link]: https://maven-badges.herokuapp.com/maven-central/me.maciejb.snappyflows/snappy-flows_2.11
 [travis-ci-badge]: https://travis-ci.org/maciej/snappy-flows.svg
 [travis-ci-link]: https://travis-ci.org/maciej/snappy-flows
+[bintray-snappy-flows]: https://bintray.com/maciej/maven/snappy-flows
