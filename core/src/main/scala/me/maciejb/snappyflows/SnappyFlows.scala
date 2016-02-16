@@ -1,8 +1,9 @@
 package me.maciejb.snappyflows
 
 
+import akka.NotUsed
 import akka.stream.io.ByteStringParser
-import akka.stream.io.ByteStringParser.{ByteReader, ParseStep}
+import akka.stream.io.ByteStringParser.{ParseResult, ByteReader, ParseStep}
 import akka.stream.scaladsl._
 import akka.stream.{Attributes, FlowShape}
 import akka.util.ByteString
@@ -16,7 +17,7 @@ object SnappyFlows {
   val MaxChunkSize = 65536
   val DefaultChunkSize = MaxChunkSize
 
-  def decompress(verifyChecksums: Boolean = true): Flow[ByteString, ByteString, Unit] = {
+  def decompress(verifyChecksums: Boolean = true): Flow[ByteString, ByteString, NotUsed] = {
     SnappyChunk.decodingFlow.map {
       case NoData => ByteString.empty
       case UncompressedData(data, checksum) =>
@@ -31,7 +32,7 @@ object SnappyFlows {
   }
 
   def decompressAsync(parallelism: Int, verifyChecksums: Boolean = true)
-                     (implicit ec: ExecutionContext): Flow[ByteString, ByteString, Unit] = {
+                     (implicit ec: ExecutionContext): Flow[ByteString, ByteString, NotUsed] = {
     SnappyChunk.decodingFlow.mapAsync(parallelism) {
       case NoData => Future.successful(ByteString.empty)
       case UncompressedData(data, checksum) =>
@@ -50,7 +51,7 @@ object SnappyFlows {
   }
 
   private[this] def compressWithFlow(chunkSize: Int,
-                                     compressionFlow: Flow[ByteString, ByteString, Unit]) = {
+                                     compressionFlow: Flow[ByteString, ByteString, NotUsed]) = {
     require(chunkSize <= MaxChunkSize, s"Chunk size $chunkSize exceeds maximum chunk size of $MaxChunkSize.")
 
     val headerSource = Source.single(SnappyFramed.Header)
@@ -68,12 +69,12 @@ object SnappyFlows {
     })
   }
 
-  def compress(chunkSize: Int = DefaultChunkSize): Flow[ByteString, ByteString, Unit] = {
+  def compress(chunkSize: Int = DefaultChunkSize): Flow[ByteString, ByteString, NotUsed] = {
     compressWithFlow(chunkSize, Flow[ByteString].map(SnappyFramed.compressChunk))
   }
 
   def compressAsync(parallelism: Int, chunkSize: Int = DefaultChunkSize)
-                   (implicit ec: ExecutionContext): Flow[ByteString, ByteString, Unit] = {
+                   (implicit ec: ExecutionContext): Flow[ByteString, ByteString, NotUsed] = {
     compressWithFlow(chunkSize,
       Flow[ByteString].mapAsync(parallelism) { chunk => Future(SnappyFramed.compressChunk(chunk)) }
     )
@@ -115,7 +116,7 @@ case class UncompressedData(data: ByteString, checksum: Int) extends SnappyChunk
 case object NoData extends SnappyChunk
 
 object SnappyChunk {
-  def decodingFlow: Flow[ByteString, SnappyChunk, Unit] = Flow.fromGraph(new Decoder)
+  def decodingFlow: Flow[ByteString, SnappyChunk, NotUsed] = Flow.fromGraph(new Decoder)
 
   private class Decoder extends ByteStringParser[SnappyChunk] {
     override def createLogic(inheritedAttributes: Attributes) = new ParsingLogic {
@@ -124,7 +125,7 @@ object SnappyChunk {
         override def parse(reader: ByteReader) = {
           val header = reader.take(SnappyFramed.Header.length)
 
-          if (header == SnappyFramed.Header) (NoData, ChunkParser)
+          if (header == SnappyFramed.Header) ParseResult(Some(NoData), ChunkParser)
           else sys.error(s"Illegal header: $header.")
         }
       }
@@ -137,12 +138,12 @@ object SnappyChunk {
               val segmentLength = Int24.readLE(reader) - 4
               val checksum = reader.readIntLE()
               val data = reader.take(segmentLength)
-              (CompressedData(data, checksum), ChunkParser)
+              ParseResult(Some(CompressedData(data, checksum)), ChunkParser)
             case SnappyFramed.Flags.UncompressedData =>
               val segmentLength = Int24.readLE(reader) - 4
               val checksum = reader.readIntLE()
               val data = reader.take(segmentLength)
-              (UncompressedData(data, checksum), ChunkParser)
+              ParseResult(Some(UncompressedData(data, checksum)), ChunkParser)
             case flag => throw new IllegalChunkFlag(flag)
           }
         }

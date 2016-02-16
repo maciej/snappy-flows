@@ -5,7 +5,7 @@ import sbt._
 import sbtrelease.ReleasePlugin.autoImport._
 
 object Versions {
-  val akka = "2.4.1"
+  val akka = "2.4.2-RC3"
 }
 
 object Dependencies {
@@ -15,7 +15,7 @@ object Dependencies {
   val akka = Seq(
     "com.typesafe.akka" %% "akka-actor" % Versions.akka,
     "com.typesafe.akka" %% "akka-testkit" % Versions.akka % "test",
-    "com.typesafe.akka" %% "akka-stream-experimental" % "2.0.1"
+    "com.typesafe.akka" %% "akka-stream" % Versions.akka
   )
 
   val snappy = "org.xerial.snappy" % "snappy-java" % "1.1.2"

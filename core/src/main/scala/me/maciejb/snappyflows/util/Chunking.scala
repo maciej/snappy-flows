@@ -1,5 +1,6 @@
 package me.maciejb.snappyflows.util
 
+import akka.NotUsed
 import akka.stream.scaladsl.Flow
 import akka.stream.stage.{Context, PushPullStage, SyncDirective, TerminationDirective}
 import akka.util.ByteString
@@ -7,7 +8,7 @@ import akka.util.ByteString
 
 private[snappyflows] object Chunking {
 
-  def fixedSize(chunkSize: Int): Flow[ByteString, ByteString, Unit] =
+  def fixedSize(chunkSize: Int): Flow[ByteString, ByteString, NotUsed] =
     Flow[ByteString].transform(() => new ChunkerStage(chunkSize))
 
   class ChunkerStage(val chunkSize: Int) extends PushPullStage[ByteString, ByteString] {
