@@ -4,7 +4,7 @@ import java.io.File
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{FileIO, Keep, Sink, Source}
+import akka.stream.scaladsl.{FileIO, Keep}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
