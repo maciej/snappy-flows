@@ -1,4 +1,4 @@
-package me.maciejb.snappyflows.util
+package me.maciejb.snappyflows.impl
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer

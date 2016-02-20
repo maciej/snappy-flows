@@ -7,7 +7,7 @@ import akka.stream.io.ByteStringParser.{ParseResult, ByteReader, ParseStep}
 import akka.stream.scaladsl._
 import akka.stream.{Attributes, FlowShape}
 import akka.util.ByteString
-import me.maciejb.snappyflows.util.{Chunking, Int24}
+import me.maciejb.snappyflows.impl.{Chunking, Int24}
 import org.xerial.snappy.{PureJavaCrc32C, Snappy}
 
 import scala.concurrent.{ExecutionContext, Future}
