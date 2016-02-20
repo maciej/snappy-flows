@@ -5,7 +5,7 @@ import sbt._
 import sbtrelease.ReleasePlugin.autoImport._
 
 object Versions {
-  val akka = "2.4.2-RC3"
+  val akka = "2.4.2"
 }
 
 object Dependencies {
