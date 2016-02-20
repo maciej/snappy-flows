@@ -1,7 +1,7 @@
-package me.maciejb.snappyflows.util
+package me.maciejb.snappyflows.impl
 
-import akka.stream.io.ByteStringParser.ByteReader
 import akka.util.ByteString
+import me.maciejb.snappyflows.impl.ByteStringParser.ByteReader
 
 
 private[snappyflows] object Int24 {

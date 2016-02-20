@@ -6,7 +6,7 @@ import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.ByteString
 import me.maciejb.snappyflows.SnappyFlows
 import me.maciejb.snappyflows.benchmarks.data.EColi
-import me.maciejb.snappyflows.util.Chunking
+import me.maciejb.snappyflows.impl.Chunking
 import org.openjdk.jmh.annotations.{Benchmark, Scope, State, TearDown}
 import org.openjdk.jmh.runner.Runner
 import org.openjdk.jmh.runner.options.{Options, OptionsBuilder}
