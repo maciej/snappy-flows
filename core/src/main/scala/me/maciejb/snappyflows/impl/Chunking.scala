@@ -1,49 +1,70 @@
 package me.maciejb.snappyflows.impl
 
 import akka.NotUsed
+import akka.stream.{Outlet, Inlet, Attributes, FlowShape}
 import akka.stream.scaladsl.Flow
-import akka.stream.stage.{Context, PushPullStage, SyncDirective, TerminationDirective}
+import akka.stream.stage._
 import akka.util.ByteString
 
 
 private[snappyflows] object Chunking {
 
   def fixedSize(chunkSize: Int): Flow[ByteString, ByteString, NotUsed] =
-    Flow[ByteString].transform(() => new ChunkerStage(chunkSize))
+    Flow[ByteString].via(new ChunkerStage(chunkSize))
 
-  class ChunkerStage(val chunkSize: Int) extends PushPullStage[ByteString, ByteString] {
+  class ChunkerStage(chunkSize: Int) extends GraphStage[FlowShape[ByteString, ByteString]] {
+    val in = Inlet[ByteString]("bytes-in")
+    val out = Outlet[ByteString]("bytes-out")
 
-    var buffer = ByteString.empty
+    override val shape = FlowShape(in, out)
+    override def createLogic(inheritedAttributes: Attributes) = {
 
-    override def onPush(chunk: ByteString, ctx: Context[ByteString]) = {
-      buffer ++= chunk
-      split(ctx)
-    }
+      var buffer = ByteString.empty
 
-    override def onPull(ctx: Context[ByteString]) = {
-      split(ctx)
-    }
+      new GraphStageLogic(shape) {
+        def split() = {
+          if (buffer.size < chunkSize) {
+            tryPull()
+          } else {
+            val (chunk, remaining) = buffer.splitAt(chunkSize)
+            buffer = remaining
+            if (isClosed(in) && buffer.isEmpty) {
+              push(out, chunk)
+              complete(out)
+            }
+            else {
+              push(out, chunk)
+            }
+          }
+        }
 
-    private def tryPull(ctx: Context[ByteString]): SyncDirective = {
-      if (ctx.isFinishing) ctx.pushAndFinish(buffer)
-      else ctx.pull()
-    }
+        private def tryPull(): Unit =
+          if (isClosed(in)) {
+            push(out, buffer)
+            complete(out)
+          } else {
+            pull(in)
+          }
 
-    def split(ctx: Context[ByteString]): SyncDirective = {
-      if (buffer.size < chunkSize) tryPull(ctx)
-      else {
-        val (chunk, remaining) = buffer.splitAt(chunkSize)
-        buffer = remaining
-        if (ctx.isFinishing && buffer.isEmpty) ctx.pushAndFinish(chunk)
-        else ctx.push(chunk)
+        setHandler(in, new InHandler {
+          @throws[Exception]
+          override def onPush() = {
+            buffer ++= grab(in)
+            split()
+          }
+          @throws[Exception](classOf[Exception])
+          override def onUpstreamFinish() = {}
+        })
+
+        setHandler(out, new OutHandler {
+          @throws[Exception]
+          override def onPull() = {
+            split()
+          }
+        })
+
       }
     }
-
-    override def onUpstreamFinish(ctx: Context[ByteString]): TerminationDirective = {
-      if (buffer.nonEmpty) ctx.absorbTermination()
-      else ctx.finish()
-    }
-
-    override def postStop() = buffer = null
   }
+
 }
