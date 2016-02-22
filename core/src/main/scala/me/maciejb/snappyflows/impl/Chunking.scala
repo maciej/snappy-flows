@@ -31,8 +31,7 @@ private[snappyflows] object Chunking {
             if (isClosed(in) && buffer.isEmpty) {
               push(out, chunk)
               complete(out)
-            }
-            else {
+            } else {
               push(out, chunk)
             }
           }
@@ -40,7 +39,7 @@ private[snappyflows] object Chunking {
 
         private def tryPull(): Unit =
           if (isClosed(in)) {
-            push(out, buffer)
+            if (buffer.nonEmpty) push(out, buffer)
             complete(out)
           } else {
             pull(in)
