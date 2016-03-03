@@ -13,6 +13,8 @@ private[snappyflows] object Chunking {
     Flow[ByteString].via(new ChunkerStage(chunkSize))
 
   class ChunkerStage(chunkSize: Int) extends GraphStage[FlowShape[ByteString, ByteString]] {
+    require(chunkSize > 0, "`chunkSize` should be greater than 0")
+
     val in = Inlet[ByteString]("bytes-in")
     val out = Outlet[ByteString]("bytes-out")
 
