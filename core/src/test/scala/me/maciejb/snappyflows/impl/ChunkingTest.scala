@@ -17,7 +17,7 @@ class ChunkingTest extends FlatSpec with Matchers with BeforeAndAfterAll with Sc
   implicit lazy val system = ActorSystem()
   implicit lazy val mat = ActorMaterializer()
 
-  override implicit val patienceConfig = PatienceConfig(scaled(300.millis), scaled(15.millis))
+  override implicit val patienceConfig = PatienceConfig(scaled(500.millis), scaled(15.millis))
 
   def byteStringSeq(strings: String*) = strings.map(ByteString.fromString).to[immutable.Seq]
 
