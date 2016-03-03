@@ -32,6 +32,22 @@ class ChunkingTest extends FlatSpec with Matchers with BeforeAndAfterAll with Sc
     }
   }
 
+  it should "always emit the last element on upstream termination" in {
+    import collection.immutable
+    val fut = Source(immutable.Seq("abc", "bcd"))
+      .map(ByteString.fromString)
+      .via(Chunking.fixedSize(4))
+      .grouped(10)
+      .toMat(Sink.head)(Keep.right).run()
+
+    whenReady(fut) { chunks =>
+      chunks shouldEqual Seq(
+        ByteString.fromString("abcb"),
+        ByteString.fromString("cd")
+      )
+    }
+  }
+
   override protected def afterAll() = {
     TestKit.shutdownActorSystem(system)
     super.afterAll()
