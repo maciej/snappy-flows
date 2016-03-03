@@ -22,29 +22,18 @@ private[snappyflows] object Chunking {
       var buffer = ByteString.empty
 
       new GraphStageLogic(shape) {
-        def split() = {
-          if (buffer.size < chunkSize) {
-            tryPull()
-          } else {
-            val (chunk, remaining) = buffer.splitAt(chunkSize)
-            buffer = remaining
-            if (isClosed(in) && buffer.isEmpty) {
-              push(out, chunk)
-              complete(out)
-            }
-            else {
-              push(out, chunk)
-            }
-          }
+        private def nextChunk(): ByteString = {
+          val (chunk, remaining) = buffer.splitAt(chunkSize)
+          buffer = remaining
+          chunk
         }
 
-        private def tryPull(): Unit =
-          if (isClosed(in)) {
-            push(out, buffer)
-            complete(out)
-          } else {
-            pull(in)
-          }
+        private def tryPull(): Unit = if (!isClosed(in)) pull(in)
+
+        private def split() = {
+          if (buffer.size < chunkSize) tryPull()
+          else push(out, nextChunk())
+        }
 
         setHandler(in, new InHandler {
           @throws[Exception]
@@ -52,8 +41,12 @@ private[snappyflows] object Chunking {
             buffer ++= grab(in)
             split()
           }
-          @throws[Exception](classOf[Exception])
-          override def onUpstreamFinish() = {}
+
+          @throws[Exception]
+          override def onUpstreamFinish() = {
+            while (buffer.nonEmpty) emit(out, nextChunk())
+            complete(out)
+          }
         })
 
         setHandler(out, new OutHandler {
