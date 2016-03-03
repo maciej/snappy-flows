@@ -9,7 +9,7 @@ Uses Snappy's [framing format][snappy-framing].
 ## Getting started
 In your `build.sbt`:
 ```scala
-libraryDependencies += "me.maciejb.snappyflows" %% "snappy-flows" % "0.1.3"
+libraryDependencies += "me.maciejb.snappyflows" %% "snappy-flows" % "0.1.4"
 ```
 Snappy flows are available for Scala 2.11 and Akka 2.4.2.
 
