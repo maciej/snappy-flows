@@ -1,7 +1,7 @@
 import _root_.pl.project13.scala.sbt.JmhPlugin
 import sbt.Keys._
 
-lazy val core = Project("core", file("core"))
+lazy val core = project.in(file("core"))
   .settings(name := "snappy-flows")
   .settings(Settings.common ++ Settings.release)
   .settings {
@@ -9,12 +9,12 @@ lazy val core = Project("core", file("core"))
     libraryDependencies ++= akka ++ Seq(snappy, scalaTest)
   }
 
-lazy val benchmarks = Project("benchmarks", file("benchmarks"))
+lazy val benchmarks = project.in(file("benchmarks"))
   .settings(Settings.common :+ (publish := {}))
   .enablePlugins(JmhPlugin)
   .dependsOn(core)
 
-lazy val root = Project("root", file("."))
+lazy val root = project.in(file("."))
   .settings(name := "snappy-flows-root")
   .settings(Settings.common)
   .settings(publish := {})
