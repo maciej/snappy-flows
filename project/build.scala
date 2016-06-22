@@ -5,7 +5,7 @@ import sbt._
 import sbtrelease.ReleasePlugin.autoImport._
 
 object Versions {
-  val akka = "2.4.2"
+  val akka = "2.4.7"
 }
 
 object Dependencies {
@@ -23,7 +23,7 @@ object Dependencies {
 
 object Settings {
   val common = Seq(
-    scalaVersion := "2.11.7",
+    scalaVersion := "2.11.8",
     organization := "me.maciejb.snappyflows",
     description := "Snappy compression Akka Streams flows",
     homepage := Some(url("https://github.com/maciej/snappy-flows")),
