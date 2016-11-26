@@ -14,10 +14,10 @@ import scala.concurrent.duration._
 
 class ChunkingTest extends FlatSpec with Matchers with BeforeAndAfterAll with ScalaFutures {
 
-  implicit lazy val system = ActorSystem()
-  implicit lazy val mat = ActorMaterializer()
+  implicit lazy val system: ActorSystem = ActorSystem()
+  implicit lazy val mat: ActorMaterializer = ActorMaterializer()
 
-  override implicit val patienceConfig = PatienceConfig(scaled(500.millis), scaled(15.millis))
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(scaled(500.millis), scaled(15.millis))
 
   def byteStringSeq(strings: String*) = strings.map(ByteString.fromString).to[immutable.Seq]
 
