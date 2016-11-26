@@ -17,6 +17,9 @@ lazy val benchmarks = project.in(file("benchmarks"))
 lazy val root = project.in(file("."))
   .settings(name := "snappy-flows-root")
   .settings(Settings.common)
-  .settings(publish := {})
+  .settings {
+    publish := {}
+    releaseCrossBuild := true
+  }
   .enablePlugins(ReleasePlugin)
   .aggregate(core, benchmarks)
