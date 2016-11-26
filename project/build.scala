@@ -19,7 +19,7 @@ object Dependencies {
     "com.typesafe.akka" %% "akka-stream" % Versions.akka
   )
 
-  val snappy = "org.xerial.snappy" % "snappy-java" % "1.1.2"
+  val snappy = "org.xerial.snappy" % "snappy-java" % "1.1.2.6"
 }
 
 object Settings {
