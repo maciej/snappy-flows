@@ -5,12 +5,13 @@ import sbt._
 import sbtrelease.ReleasePlugin.autoImport._
 
 object Versions {
-  val akka = "2.4.7"
+  val akka = "2.4.14"
 }
 
+//noinspection TypeAnnotation
 object Dependencies {
   val scalaTest =
-    "org.scalatest" %% "scalatest" % "2.2.4" % "test"
+    "org.scalatest" %% "scalatest" % "3.0.1" % "test"
 
   val akka = Seq(
     "com.typesafe.akka" %% "akka-actor" % Versions.akka,
@@ -24,6 +25,7 @@ object Dependencies {
 object Settings {
   val common = Seq(
     scalaVersion := "2.11.8",
+    crossScalaVersions := Seq(scalaVersion.value, "2.12.0"),
     organization := "me.maciejb.snappyflows",
     description := "Snappy compression Akka Streams flows",
     homepage := Some(url("https://github.com/maciej/snappy-flows")),
@@ -32,7 +34,7 @@ object Settings {
   )
 
   val release = Seq(
-    isSnapshot <<= isSnapshot or version(_ endsWith "-SNAPSHOT"),
+    isSnapshot := (isSnapshot or version(_ endsWith "-SNAPSHOT")).value,
     bintrayOrganization := Some("maciej"),
     pomIncludeRepository := { _ => false },
     publishMavenStyle := true,
@@ -51,6 +53,7 @@ object Settings {
           </developer>
         </developers>
       ),
-    releasePublishArtifactsAction := PgpKeys.publishSigned.value
+    releasePublishArtifactsAction := PgpKeys.publishSigned.value,
+    releaseCrossBuild := true
   )
 }
