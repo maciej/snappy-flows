@@ -24,7 +24,7 @@ object Dependencies {
 
 object Settings {
   val common = Seq(
-    scalaVersion := "2.12.1",
+    scalaVersion := "2.12.6",
     crossScalaVersions := Seq(scalaVersion.value, "2.11.8"),
     organization := "me.maciejb.snappyflows",
     description := "Snappy compression Akka Streams flows",
