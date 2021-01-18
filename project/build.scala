@@ -5,13 +5,13 @@ import sbt._
 import sbtrelease.ReleasePlugin.autoImport._
 
 object Versions {
-  val akka = "2.4.14"
+  val akka = "2.6.10"
 }
 
 //noinspection TypeAnnotation
 object Dependencies {
   val scalaTest =
-    "org.scalatest" %% "scalatest" % "3.0.1" % "test"
+    "org.scalatest" %% "scalatest" % "3.2.3" % "test"
 
   val akka = Seq(
     "com.typesafe.akka" %% "akka-actor" % Versions.akka,
@@ -19,13 +19,13 @@ object Dependencies {
     "com.typesafe.akka" %% "akka-stream" % Versions.akka
   )
 
-  val snappy = "org.xerial.snappy" % "snappy-java" % "1.1.2.6"
+  val snappy = "org.xerial.snappy" % "snappy-java" % "1.1.8.2"
 }
 
 object Settings {
   val common = Seq(
-    scalaVersion := "2.12.1",
-    crossScalaVersions := Seq(scalaVersion.value, "2.11.8"),
+    scalaVersion := "2.13.4",
+    crossScalaVersions := Seq(scalaVersion.value, "2.12.13"),
     organization := "me.maciejb.snappyflows",
     description := "Snappy compression Akka Streams flows",
     homepage := Some(url("https://github.com/maciej/snappy-flows")),

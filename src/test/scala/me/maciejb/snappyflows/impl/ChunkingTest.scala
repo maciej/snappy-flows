@@ -1,27 +1,26 @@
 package me.maciejb.snappyflows.impl
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.testkit.TestKit
 import akka.util.ByteString
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-import scala.collection.immutable
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class ChunkingTest extends FlatSpec with Matchers with BeforeAndAfterAll with ScalaFutures {
+class ChunkingTest extends AnyFlatSpec with Matchers with BeforeAndAfterAll with ScalaFutures {
 
   implicit lazy val system: ActorSystem = ActorSystem()
-  implicit lazy val mat: ActorMaterializer = ActorMaterializer()
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(scaled(500.millis), scaled(15.millis))
 
-  def byteStringSeq(strings: String*) = strings.map(ByteString.fromString).to[immutable.Seq]
+  def byteStringSeq(strings: String*) = strings.map(ByteString.fromString).toList
 
-  def chunk(size: Int, elems: immutable.Seq[ByteString]): Future[immutable.Seq[ByteString]] = {
+  def chunk(size: Int, elems: List[ByteString]): Future[Seq[ByteString]] = {
     Source(elems)
       .via(Chunking.fixedSize(size))
       .grouped(1024)

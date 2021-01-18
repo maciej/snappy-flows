@@ -2,19 +2,19 @@ package me.maciejb.snappyflows
 
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{Keep, Source, Sink}
+import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.testkit.{TestKit, TestKitBase}
 import akka.util.ByteString
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.{BeforeAndAfterAll, Matchers, FlatSpec}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 
-class RoundTripTest extends FlatSpec with Matchers with TestKitBase with BeforeAndAfterAll
+class RoundTripTest extends AnyFlatSpec with Matchers with TestKitBase with BeforeAndAfterAll
   with ScalaFutures with IntegrationPatience {
 
   override implicit lazy val system: ActorSystem = ActorSystem("RoundTripTest")
-  implicit lazy val mat = ActorMaterializer()
 
   import scala.concurrent.ExecutionContext.Implicits._
 
