@@ -38,7 +38,7 @@ object Settings {
     bintrayOrganization := Some("maciej"),
     pomIncludeRepository := { _ => false },
     publishMavenStyle := true,
-    publishArtifact in Test := false,
+    Test / publishArtifact := false,
     //noinspection ScalaUnnecessaryParentheses
     pomExtra := (
       <scm>
