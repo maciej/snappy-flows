@@ -5,7 +5,7 @@ import sbt._
 import sbtrelease.ReleasePlugin.autoImport._
 
 object Versions {
-  val akka = "2.6.10"
+  val pekko = "1.0.1"
 }
 
 //noinspection TypeAnnotation
@@ -13,10 +13,10 @@ object Dependencies {
   val scalaTest =
     "org.scalatest" %% "scalatest" % "3.2.3" % "test"
 
-  val akka = Seq(
-    "com.typesafe.akka" %% "akka-actor" % Versions.akka,
-    "com.typesafe.akka" %% "akka-testkit" % Versions.akka % "test",
-    "com.typesafe.akka" %% "akka-stream" % Versions.akka
+  val pekko = Seq(
+    "org.apache.pekko" %% "pekko-actor" % Versions.pekko,
+    "org.apache.pekko" %% "pekko-testkit" % Versions.pekko % "test",
+    "org.apache.pekko" %% "pekko-stream" % Versions.pekko
   )
 
   val snappy = "org.xerial.snappy" % "snappy-java" % "1.1.8.2"

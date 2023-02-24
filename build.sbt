@@ -1,12 +1,14 @@
 import _root_.pl.project13.scala.sbt.JmhPlugin
 import sbt.Keys._
 
+//resolvers += "apache" at "https://repository.apache.org/content/repositories/snapshots/"
+
 lazy val snappyFlows = project.in(file("."))
   .settings(name := "snappy-flows")
   .settings(Settings.common ++  Settings.release)
   .settings {
     import Dependencies._
-    libraryDependencies ++= akka ++ Seq(snappy, scalaTest)
+    libraryDependencies ++= pekko ++ Seq(snappy, scalaTest)
   }
   .enablePlugins(ReleasePlugin)
 

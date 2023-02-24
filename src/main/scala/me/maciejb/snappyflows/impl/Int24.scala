@@ -1,6 +1,6 @@
 package me.maciejb.snappyflows.impl
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import me.maciejb.snappyflows.impl.ByteStringParser.ByteReader
 
 

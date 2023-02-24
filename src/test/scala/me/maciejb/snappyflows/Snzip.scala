@@ -1,7 +1,10 @@
 package me.maciejb.snappyflows
 
-import akka.actor.ActorSystem
-import akka.stream.scaladsl.{FileIO, Keep}
+import java.io.File
+
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.ActorMaterializer
+import org.apache.pekko.stream.scaladsl.{FileIO, Keep}
 
 import java.nio.file.Paths
 import scala.concurrent.Await

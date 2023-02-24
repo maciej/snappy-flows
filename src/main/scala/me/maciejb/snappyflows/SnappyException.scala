@@ -1,6 +1,6 @@
 package me.maciejb.snappyflows
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 
 
 class SnappyException(desc: String, causeOpt: Option[Exception] = None)

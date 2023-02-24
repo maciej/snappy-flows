@@ -1,10 +1,10 @@
 package me.maciejb.snappyflows
 
 
-import akka.NotUsed
-import akka.stream.FlowShape
-import akka.stream.scaladsl._
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.FlowShape
+import org.apache.pekko.stream.scaladsl._
+import org.apache.pekko.util.ByteString
 import me.maciejb.snappyflows.impl.Chunks.{CompressedData, UncompressedData}
 import me.maciejb.snappyflows.impl._
 import org.xerial.snappy.{PureJavaCrc32C, Snappy}
