@@ -2,7 +2,7 @@
 [![Maven Central][maven-central-badge]][maven-central-link]
 [![Build Status][travis-ci-badge]][travis-ci-link]
 
-Snappy compression and decompression [Akka Steams][akka-streams] `Flow`s.
+Snappy compression and decompression [Pekko Steams][pekko-streams] `Flow`s.
 
 Uses Snappy's [framing format][snappy-framing].
 
@@ -12,7 +12,7 @@ In your `build.sbt`:
 libraryDependencies += "me.maciejb.snappyflows" %% "snappy-flows" % "0.3.0"
 ```
 Snappy flows are available for Scala 2.11, 2.12 and 2.13.
-We use a recent Akka 2.6 branch version (2.6.10 as of snappy-flows 0.3.0). 
+We use a recent Pekko 1.0.1 branch version
 
 Previous releases:
 
@@ -55,15 +55,15 @@ For details refer to [benchmarks/README.md](benchmarks/README.md).
 ## Resources
 * [Reference Snappy implementation][google-snappy]
 * [Snappy for Java][snappy-java]
-* [Akka Streams documentation][akka-streams]
-* [Akka project][akka]
+* [Pekko Streams documentation][pekko-streams]
+* [Pekko project][pekko]
 * [Snappy flows at bintray][bintray-snappy-flows]
 
-[akka-streams]: http://doc.akka.io/docs/akka-stream-and-http-experimental/snapshot/scala.html
+[pekko-streams]: https://pekko.apache.org/docs/pekko/current/stream/stream-dynamic.html
 [snappy-framing]: https://github.com/google/snappy/blob/master/framing_format.txt
 [google-snappy]: https://github.com/google/snappy
 [snappy-java]: https://github.com/xerial/snappy-java
-[akka]: http://akka.io
+[pekko]: http://pekko.apache.org
 [maven-central-badge]: https://maven-badges.herokuapp.com/maven-central/me.maciejb.snappyflows/snappy-flows_2.11/badge.svg
 [maven-central-link]: https://maven-badges.herokuapp.com/maven-central/me.maciejb.snappyflows/snappy-flows_2.11
 [travis-ci-badge]: https://travis-ci.org/maciej/snappy-flows.svg

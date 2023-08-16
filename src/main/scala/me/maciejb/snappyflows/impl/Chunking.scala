@@ -1,10 +1,10 @@
 package me.maciejb.snappyflows.impl
 
-import akka.NotUsed
-import akka.stream.{Outlet, Inlet, Attributes, FlowShape}
-import akka.stream.scaladsl.Flow
-import akka.stream.stage._
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.{Outlet, Inlet, Attributes, FlowShape}
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.stream.stage._
+import org.apache.pekko.util.ByteString
 
 
 private[snappyflows] object Chunking {

@@ -1,8 +1,9 @@
 package me.maciejb.snappyflows
 
-import akka.actor.ActorSystem
-import akka.stream.scaladsl.{Keep, Sink, StreamConverters}
-import akka.util.ByteString
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.ActorMaterializer
+import org.apache.pekko.stream.scaladsl.{StreamConverters, Keep, Sink, Source}
+import org.apache.pekko.util.ByteString
 
 import scala.concurrent.Await
 import scala.concurrent.duration._

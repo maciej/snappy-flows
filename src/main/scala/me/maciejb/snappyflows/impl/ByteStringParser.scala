@@ -1,8 +1,8 @@
 package me.maciejb.snappyflows.impl
 
-import akka.stream.{Attributes, Outlet, Inlet, FlowShape}
-import akka.stream.stage.{InHandler, GraphStageLogic, GraphStage}
-import akka.util.ByteString
+import org.apache.pekko.stream.{Attributes, Outlet, Inlet, FlowShape}
+import org.apache.pekko.stream.stage.{InHandler, GraphStageLogic, GraphStage}
+import org.apache.pekko.util.ByteString
 
 import scala.annotation.tailrec
 import scala.util.control.NoStackTrace

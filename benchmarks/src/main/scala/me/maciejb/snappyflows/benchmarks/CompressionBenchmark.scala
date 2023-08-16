@@ -1,9 +1,9 @@
 package me.maciejb.snappyflows.benchmarks
 
-import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{Keep, Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.ActorMaterializer
+import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
+import org.apache.pekko.util.ByteString
 import me.maciejb.snappyflows.SnappyFlows
 import me.maciejb.snappyflows.benchmarks.data.EColi
 import me.maciejb.snappyflows.impl.Chunking

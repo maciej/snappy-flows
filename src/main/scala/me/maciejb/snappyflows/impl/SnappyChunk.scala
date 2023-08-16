@@ -1,9 +1,9 @@
 package me.maciejb.snappyflows.impl
 
-import akka.NotUsed
-import akka.stream.Attributes
-import akka.stream.scaladsl.Flow
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.Attributes
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.util.ByteString
 import me.maciejb.snappyflows.impl.Chunks._
 import me.maciejb.snappyflows.{InvalidHeader, IllegalChunkFlag}
 import me.maciejb.snappyflows.impl.ByteStringParser.{ParseResult, ByteReader, ParseStep}
